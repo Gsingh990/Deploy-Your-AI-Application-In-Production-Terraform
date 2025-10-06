@@ -1,3 +1,4 @@
+
 # Terraform Azure AI Foundry
 
 This project deploys a secure, extensible, and integrated environment for running AI Foundry workloads in production on Azure. The infrastructure is defined using Terraform and organized into reusable modules for better maintainability and scalability.
@@ -59,10 +60,10 @@ The Terraform code is organized into the following modules, each responsible for
     -   **Outputs:** `name`, `location`, `id`
 
 -   **`network`**:
-    -   **Purpose:** Deploys the core networking components, including the Virtual Network and dedicated subnets (`VmSubnet`, `AzureBastionSubnet`, `Agent client subnet`).
-    -   **Resources:** `azurerm_virtual_network`, `azurerm_subnet`
-    -   **Inputs:** `vnet_name`, `address_space`, `location`, `resource_group_name`, `subnet_name`, `subnet_address_prefixes`
-    -   **Outputs:** `vnet_id`, `vnet_name`, `subnet_id`, `subnet_name`
+    -   **Purpose:** Deploys the core networking components, including the Virtual Network and dedicated subnets (`VmSubnet`, `AzureBastionSubnet`, `Agent client subnet`). It also configures DDoS Protection for the VNet.
+    -   **Resources:** `azurerm_virtual_network`, `azurerm_subnet`, `azurerm_network_ddos_protection_plan`
+    -   **Inputs:** `vnet_name`, `address_space`, `location`, `resource_group_name`, `vm_subnet_name`, `vm_subnet_address_prefixes`, `bastion_subnet_name`, `bastion_subnet_address_prefixes`, `agent_client_subnet_name`, `agent_client_subnet_address_prefixes`, `enable_ddos_protection`, `ddos_protection_plan_name`
+    -   **Outputs:** `vnet_id`, `vnet_name`, `vm_subnet_id`, `vm_subnet_name`, `bastion_subnet_id`, `bastion_subnet_name`, `agent_client_subnet_id`, `agent_client_subnet_name`, `ddos_protection_plan_id`
 
 -   **`key_vault`**:
     -   **Purpose:** Provisions an Azure Key Vault and configures its private endpoint for secure access within the VNet.
@@ -94,6 +95,60 @@ The Terraform code is organized into the following modules, each responsible for
     -   **Inputs:** `la_name`, `ai_name`, `location`, `resource_group_name`
     -   **Outputs:** `la_id`, `la_name`, `ai_id`, `ai_name`, `ai_instrumentation_key`
 
+-   **`storage_account`**:
+    -   **Purpose:** Deploys a general-purpose Azure Storage Account with private endpoint connectivity.
+    -   **Resources:** `azurerm_storage_account`, `azurerm_private_dns_zone`, `azurerm_private_dns_zone_virtual_network_link`, `azurerm_private_endpoint`
+    -   **Inputs:** `storage_account_name`, `resource_group_name`, `location`, `subnet_id`, `vnet_id`
+    -   **Outputs:** `id`, `name`
+
+-   **`azure_sql`**:
+    -   **Purpose:** Provisions an Azure SQL Server and Database with private endpoint connectivity.
+    -   **Resources:** `azurerm_mssql_server`, `azurerm_mssql_database`, `azurerm_private_dns_zone`, `azurerm_private_dns_zone_virtual_network_link`, `azurerm_private_endpoint`
+    -   **Inputs:** `sql_server_name`, `sql_database_name`, `resource_group_name`, `location`, `sql_admin_login`, `sql_admin_password`, `subnet_id`, `vnet_id`
+    -   **Outputs:** `sql_server_id`, `sql_server_name`, `sql_database_id`, `sql_database_name`
+
+-   **`cosmos_db`**:
+    -   **Purpose:** Deploys an Azure Cosmos DB account with private endpoint connectivity.
+    -   **Resources:** `azurerm_cosmosdb_account`, `azurerm_private_dns_zone`, `azurerm_private_dns_zone_virtual_network_link`, `azurerm_private_endpoint`
+    -   **Inputs:** `cosmosdb_account_name`, `resource_group_name`, `location`, `subnet_id`, `vnet_id`
+    -   **Outputs:** `id`, `name`
+
+-   **`app_storage_account`**:
+    -   **Purpose:** Deploys an Azure Storage Account specifically for application data, with private endpoint connectivity.
+    -   **Resources:** `azurerm_storage_account`, `azurerm_private_dns_zone`, `azurerm_private_dns_zone_virtual_network_link`, `azurerm_private_endpoint`
+    -   **Inputs:** `app_storage_account_name`, `resource_group_name`, `location`, `subnet_id`, `vnet_id`
+    -   **Outputs:** `id`, `name`
+
+-   **`app_service_environment`**:
+    -   **Purpose:** Provisions an Azure App Service Environment v3 for isolated and scalable web application hosting.
+    -   **Resources:** `azurerm_app_service_environment_v3`
+    -   **Inputs:** `ase_name`, `resource_group_name`, `subnet_id`
+    -   **Outputs:** `id`, `name`
+
+-   **`api_management`**:
+    -   **Purpose:** Deploys an Azure API Management service for publishing, securing, and managing APIs.
+    -   **Resources:** `azurerm_api_management`
+    -   **Inputs:** `apim_name`, `location`, `resource_group_name`, `publisher_name`, `publisher_email`, `subnet_id`
+    -   **Outputs:** `id`, `name`, `gateway_url`
+
+-   **`application_gateway`**:
+    -   **Purpose:** Creates an Azure Application Gateway with WAF capabilities for secure web traffic load balancing.
+    -   **Resources:** `azurerm_public_ip`, `azurerm_application_gateway`
+    -   **Inputs:** `ag_name`, `resource_group_name`, `location`, `subnet_id`
+    -   **Outputs:** `id`, `name`, `public_ip_address`
+
+-   **`jumpbox_vm`**:
+    -   **Purpose:** Deploys a Linux Virtual Machine to serve as a secure jumpbox for administrative access.
+    -   **Resources:** `azurerm_network_interface`, `azurerm_linux_virtual_machine`
+    -   **Inputs:** `vm_name`, `resource_group_name`, `location`, `subnet_id`, `admin_username`, `admin_password`
+    -   **Outputs:** `id`, `name`, `private_ip_address`
+
+-   **`bastion_host`**:
+    -   **Purpose:** Provisions an Azure Bastion Host for secure RDP/SSH connectivity to virtual machines.
+    -   **Resources:** `azurerm_public_ip`, `azurerm_bastion_host`
+    -   **Inputs:** `bastion_host_name`, `resource_group_name`, `location`, `subnet_id`
+    -   **Outputs:** `id`, `name`
+
 ## Getting Started
 
 ### Prerequisites
@@ -122,12 +177,29 @@ Before you begin, ensure you have the following installed:
     terraform init
     ```
 
-4.  **Review the plan:**
+4.  **Provide Sensitive Variables:**
+    For sensitive variables like `sql_admin_password` and `vm_admin_password`, it is recommended to provide them via environment variables or a `.tfvars` file, rather than directly on the command line.
+
+    **Using Environment Variables (recommended for CI/CD):**
+    ```bash
+    export TF_VAR_sql_admin_password="YourStrongSQLPassword!"
+    export TF_VAR_vm_admin_password="YourStrongVMPassword!"
+    ```
+
+    **Using a `.tfvars` file (e.g., `terraform.tfvars`):**
+    Create a file named `terraform.tfvars` in the root of your project with the following content:
+    ```terraform
+    sql_admin_password = "YourStrongSQLPassword!"
+    vm_admin_password  = "YourStrongVMPassword!"
+    ```
+    *Note: Ensure this file is not committed to version control if it contains sensitive information.*
+
+5.  **Review the plan:**
     ```bash
     terraform plan
     ```
 
-5.  **Apply the changes:**
+6.  **Apply the changes:**
     ```bash
     terraform apply
     ```
@@ -179,3 +251,15 @@ We welcome contributions! If you have suggestions for improvements or new featur
 ## License
 
 This project is licensed under the MIT License.
+
+## Future Enhancements and Considerations
+
+-   **Managed Identities for App Service Environment:** Implement user-assigned managed identities for applications deployed within the App Service Environment for secure service-to-service authentication.
+-   **App Service Plans and Web Apps:** Configure specific App Service Plans and deploy Web Apps or API Apps within the App Service Environment to host your AI application components.
+-   **API Management Configuration:** Define specific APIs, operations, and policies within the API Management service to expose your AI application's endpoints.
+-   **Database Schemas and Data:** Implement Terraform resources to manage SQL Database schemas, Cosmos DB containers, and initial data seeding.
+-   **Storage Account Containers/Blobs:** Define specific storage containers and blob configurations for different data storage needs.
+-   **CI/CD Pipelines:** Integrate Terraform deployment into a robust CI/CD pipeline (e.g., Azure DevOps, GitHub Actions) for automated infrastructure provisioning and updates.
+-   **Advanced Monitoring and Alerting:** Configure more granular Azure Monitor alerts, dashboards, and workbooks for proactive issue detection and resolution.
+-   **Cost Management:** Implement cost management best practices, including tagging, budget alerts, and rightsizing recommendations.
+-   **Disaster Recovery and Business Continuity:** Plan and implement strategies for disaster recovery, including backup and restore procedures for databases and storage accounts.

@@ -171,6 +171,37 @@ module "bastion_host" {
   subnet_id           = module.network.bastion_subnet_id
 }
 
+module "container_apps_environment" {
+  source = "./modules/container_apps_environment"
+
+  ca_env_name                = "aifoundrycaenv-${random_string.suffix.result}"
+  location                   = module.resource_group.location
+  resource_group_name        = module.resource_group.name
+  log_analytics_workspace_id = module.log_analytics.la_id
+}
+
+module "service_bus" {
+  source = "./modules/service_bus"
+
+  sb_namespace_name   = "aifoundrysb-${random_string.suffix.result}"
+  sb_queue_name       = "aifoundryqueue"
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
+  subnet_id           = module.network.vm_subnet_id
+  vnet_id             = module.network.vnet_id
+}
+
+module "managed_identity" {
+  source = "./modules/managed_identity"
+
+  identity_name       = "aifoundry-uai-${random_string.suffix.result}"
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
+}
+
+
+
+
 
 
 

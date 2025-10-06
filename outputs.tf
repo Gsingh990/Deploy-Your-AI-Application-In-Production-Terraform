@@ -1,4 +1,3 @@
-
 output "resource_group_name" {
   value = module.resource_group.name
 }
@@ -81,4 +80,24 @@ output "jumpbox_vm_private_ip" {
 
 output "bastion_host_name" {
   value = module.bastion_host.name
+}
+
+output "container_apps_environment_name" {
+  value = module.container_apps_environment.name
+}
+
+output "service_bus_namespace_name" {
+  value = module.service_bus.namespace_name
+}
+
+output "service_bus_queue_name" {
+  value = module.service_bus.queue_name
+}
+
+output "managed_identity_name" {
+  value = module.managed_identity.name
+}
+
+output "managed_identity_principal_id" {
+  value = module.managed_identity.principal_id
 }

@@ -7,7 +7,10 @@ This project deploys a secure, extensible, and integrated environment for runnin
 
 Deploying AI models from development to production can be a complex process. This Terraform project aims to simplify that by providing a robust, scalable, and maintainable infrastructure for your AI applications on Azure, adhering to Microsoft Well-Architected Framework (WAF) recommendations.
 
-![alt text](image.png)
+## Architecture Diagram
+
+![Architecture Diagram](image.png)
+
 
 ## Architecture Overview
 

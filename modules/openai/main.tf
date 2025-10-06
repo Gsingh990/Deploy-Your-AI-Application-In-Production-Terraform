@@ -6,6 +6,7 @@ resource "azurerm_cognitive_account" "openai" {
   kind                = "OpenAI"
   sku_name            = "S0"
   custom_subdomain_name = var.openai_name
+  public_network_access_enabled = false
 }
 
 resource "azurerm_private_dns_zone" "openai_pdnsz" {

@@ -1,3 +1,4 @@
+
 output "resource_group_name" {
   value = module.resource_group.name
 }
@@ -28,4 +29,56 @@ output "log_analytics_workspace_name" {
 
 output "application_insights_name" {
   value = module.log_analytics.ai_name
+}
+
+output "storage_account_name" {
+  value = module.storage_account.name
+}
+
+output "sql_server_name" {
+  value = module.azure_sql.sql_server_name
+}
+
+output "sql_database_name" {
+  value = module.azure_sql.sql_database_name
+}
+
+output "cosmosdb_account_name" {
+  value = module.cosmos_db.name
+}
+
+output "app_storage_account_name" {
+  value = module.app_storage_account.name
+}
+
+output "app_service_environment_name" {
+  value = module.app_service_environment.name
+}
+
+output "api_management_name" {
+  value = module.api_management.name
+}
+
+output "api_management_gateway_url" {
+  value = module.api_management.gateway_url
+}
+
+output "application_gateway_name" {
+  value = module.application_gateway.name
+}
+
+output "application_gateway_public_ip" {
+  value = module.application_gateway.public_ip_address
+}
+
+output "jumpbox_vm_name" {
+  value = module.jumpbox_vm.name
+}
+
+output "jumpbox_vm_private_ip" {
+  value = module.jumpbox_vm.private_ip_address
+}
+
+output "bastion_host_name" {
+  value = module.bastion_host.name
 }

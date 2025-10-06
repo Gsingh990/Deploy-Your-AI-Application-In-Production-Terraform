@@ -1,4 +1,3 @@
-
 # Terraform Azure AI Foundry
 
 This project deploys a secure, extensible, and integrated environment for running AI Foundry workloads in production on Azure. The infrastructure is defined using Terraform and organized into reusable modules for better maintainability and scalability.
@@ -11,21 +10,43 @@ Deploying AI models from development to production can be a complex process. Thi
 
 ![Architecture Diagram](image.png)
 
-
 ## Architecture Overview
 
-The project deploys the following core Azure resources, all configured for network isolation where applicable, ensuring a secure environment for AI workloads:
+The provided architecture diagram illustrates a comprehensive and secure environment for deploying AI applications in production on Azure. The core components and their interactions are designed to ensure high availability, scalability, and robust security.
 
--   **Resource Group:** A logical container for all Azure resources.
--   **Virtual Network (VNet) & Subnet:** Provides a private and isolated network space in Azure, allowing resources to communicate securely.
--   **Azure Key Vault:** Securely stores and manages sensitive information like API keys, passwords, and certificates.
--   **Azure Container Registry (ACR):** A managed registry service for building, storing, and managing container images.
--   **Azure OpenAI Service:** Provides access to OpenAI's powerful language models.
--   **Azure AI Search:** A search-as-a-service solution that allows developers to add a sophisticated search experience to their applications.
--   **Azure Log Analytics Workspace:** A centralized service for collecting, analyzing, and acting on telemetry data from Azure and on-premises environments.
--   **Azure Application Insights:** An Application Performance Management (APM) service for monitoring live web applications.
+### Key Components:
 
-All services that support private endpoints are configured to connect to the Virtual Network via private endpoints, enhancing security by keeping traffic within the Azure backbone network.
+-   **Client Virtual Network (VNet):** This is the central private network space in Azure, hosting the majority of the application's resources. It's protected by **DDoS protection** to safeguard against volumetric and protocol attacks.
+
+    -   **VmSubnet:** A dedicated subnet within the VNet for hosting virtual machines, including a **Jumpbox VM**. The Jumpbox VM serves as a secure, hardened access point for administrators and data scientists to manage resources within the private network. Access to the Jumpbox VM is secured using **Microsoft Entra ID and multi-factor authentication**.
+    -   **AzureBastionSubnet:** A specialized subnet for **Azure Bastion**, which provides secure and seamless RDP/SSH connectivity to VMs directly from the Azure portal over SSL, eliminating the need for public IP addresses on the VMs.
+    -   **Agent Client Subnet:** A subnet designated for agent or client applications that need to interact with the AI services.
+    -   **Private Endpoints:** All Azure platform services (PaaS) are integrated into the VNet using Private Endpoints. This ensures that traffic to these services traverses the Azure backbone network privately, enhancing security and reducing exposure to the public internet. Services connected via private endpoints include:
+        -   **Storage Account:** For persistent data storage.
+        -   **Key Vault:** Securely manages secrets, keys, and certificates.
+        -   **Container Registry (ACR):** Stores and manages Docker container images.
+        -   **Application Insights & Log Analytics:** For application performance monitoring and centralized logging.
+        -   **AI Foundry Account (AI Services):** The core AI platform services.
+        -   **Azure AI Search:** Provides search capabilities for the AI application.
+        -   **Azure SQL & Cosmos DB:** Relational and NoSQL database services.
+        -   **App Storage Account:** Additional storage for application data.
+
+-   **App Service Environment (ASE):** A fully isolated and dedicated environment for running web applications at high scale. It can host multiple **App Service Instances** (Zone 1 to Zone n) for the AI application's front-end or API layer. **Managed Identities** are utilized by the App Service Environment for secure authentication to other Azure services.
+
+-   **API Management (APIM):** Deployed within its own `apim-subnet`, APIM acts as a facade for the backend AI APIs, enabling secure, scalable, and managed access for clients. It handles API publishing, versioning, security policies, and analytics.
+
+-   **Application Gateway:** Residing in a `gateway-subnet`, the Application Gateway is a web traffic load balancer that enables you to manage traffic to your web applications. It provides features like SSL termination, cookie-based session affinity, and web application firewall (WAF) capabilities.
+
+-   **Internet & Clients:** External clients access the application securely through the Application Gateway and API Management, which are exposed to the internet. The diagram also shows integration with **External APIs**.
+
+-   **Azure Monitor:** Provides comprehensive monitoring of the entire Azure infrastructure, collecting metrics, logs, and traces for analysis and alerting.
+
+### Data Flow and Security:
+
+-   Users and workloads within the client's virtual network can utilize private endpoints to access managed resources and the AI Foundry project securely.
+-   Tenant users log in to the Jumpbox VM using Microsoft Entra ID and multi-factor authentication for secure management access.
+-   All internal communication between services leverages private endpoints and the VNet, minimizing public exposure.
+-   External access is controlled and secured via Application Gateway and API Management.
 
 ## Modular Structure
 
@@ -38,7 +59,7 @@ The Terraform code is organized into the following modules, each responsible for
     -   **Outputs:** `name`, `location`, `id`
 
 -   **`network`**:
-    -   **Purpose:** Deploys the core networking components, including the Virtual Network and a dedicated Subnet.
+    -   **Purpose:** Deploys the core networking components, including the Virtual Network and dedicated subnets (`VmSubnet`, `AzureBastionSubnet`, `Agent client subnet`).
     -   **Resources:** `azurerm_virtual_network`, `azurerm_subnet`
     -   **Inputs:** `vnet_name`, `address_space`, `location`, `resource_group_name`, `subnet_name`, `subnet_address_prefixes`
     -   **Outputs:** `vnet_id`, `vnet_name`, `subnet_id`, `subnet_name`
@@ -111,6 +132,18 @@ Before you begin, ensure you have the following installed:
     terraform apply
     ```
 
+## Network Topology and Security
+
+The network architecture is designed for maximum security and isolation:
+
+-   **Client Virtual Network:** The foundation of the secure environment, providing a private IP space.
+-   **Subnets:** Dedicated subnets for different functionalities (VMs, Bastion, Agent clients) ensure logical segmentation.
+-   **Private Endpoints:** All Azure PaaS services are accessed exclusively through private endpoints, eliminating public internet exposure for data traffic.
+-   **Private DNS Zones:** Integrated with private endpoints to ensure proper name resolution within the VNet.
+-   **Azure Bastion:** Provides secure, RDP/SSH access to VMs without exposing them to the public internet.
+-   **DDoS Protection:** Enabled on the VNet to protect against network-layer attacks.
+-   **Application Gateway & API Management:** Act as secure entry points for external traffic, providing load balancing, WAF capabilities, and API governance.
+
 ## Deployment Strategies (Terraform on Azure)
 
 This project focuses on deploying the foundational Azure infrastructure for AI applications using Terraform. Once the infrastructure is provisioned, you can integrate your AI application using various deployment methods, such as:
@@ -136,6 +169,8 @@ This Terraform project incorporates several security best practices:
 -   **Key Management:** Azure Key Vault is used to securely store sensitive information.
 -   **Role-Based Access Control (RBAC):** Azure RBAC is recommended for managing access to resources.
 -   **Managed Identities:** Utilize Managed Identities for Azure resources to authenticate to services without managing credentials.
+-   **Secure Access to VMs:** Jumpbox VMs and Azure Bastion provide secure and controlled access to virtual machines.
+-   **DDoS Protection:** Protects the virtual network from distributed denial-of-service attacks.
 
 ## Contributing
 

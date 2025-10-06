@@ -1,3 +1,4 @@
+
 module "resource_group" {
   source = "./modules/resource_group"
 
@@ -12,8 +13,13 @@ module "network" {
   address_space           = ["10.0.0.0/16"]
   location                = module.resource_group.location
   resource_group_name     = module.resource_group.name
-  subnet_name             = "default"
-  subnet_address_prefixes = ["10.0.1.0/24"]
+  vm_subnet_name          = "VmSubnet"
+  vm_subnet_address_prefixes = ["10.0.1.0/24"]
+  bastion_subnet_name     = "AzureBastionSubnet"
+  bastion_subnet_address_prefixes = ["10.0.2.0/27"]
+  agent_client_subnet_name = "AgentClientSubnet"
+  agent_client_subnet_address_prefixes = ["10.0.3.0/24"]
+  enable_ddos_protection  = true
 }
 
 data "azurerm_client_config" "current" {}
@@ -32,7 +38,7 @@ module "key_vault" {
   resource_group_name = module.resource_group.name
   tenant_id           = data.azurerm_client_config.current.tenant_id
   vnet_id             = module.network.vnet_id
-  subnet_id           = module.network.subnet_id
+  subnet_id           = module.network.vm_subnet_id
 }
 
 module "container_registry" {
@@ -42,7 +48,7 @@ module "container_registry" {
   location            = module.resource_group.location
   resource_group_name = module.resource_group.name
   vnet_id             = module.network.vnet_id
-  subnet_id           = module.network.subnet_id
+  subnet_id           = module.network.vm_subnet_id
 }
 
 module "openai" {
@@ -52,7 +58,7 @@ module "openai" {
   location            = module.resource_group.location
   resource_group_name = module.resource_group.name
   vnet_id             = module.network.vnet_id
-  subnet_id           = module.network.subnet_id
+  subnet_id           = module.network.vm_subnet_id
 }
 
 module "search" {
@@ -62,7 +68,7 @@ module "search" {
   location            = module.resource_group.location
   resource_group_name = module.resource_group.name
   vnet_id             = module.network.vnet_id
-  subnet_id           = module.network.subnet_id
+  subnet_id           = module.network.vm_subnet_id
 }
 
 module "log_analytics" {
@@ -73,3 +79,103 @@ module "log_analytics" {
   location            = module.resource_group.location
   resource_group_name = module.resource_group.name
 }
+
+module "storage_account" {
+  source = "./modules/storage_account"
+
+  storage_account_name = "aifoundrysa${random_string.suffix.result}"
+  resource_group_name  = module.resource_group.name
+  location             = module.resource_group.location
+  subnet_id            = module.network.vm_subnet_id
+  vnet_id              = module.network.vnet_id
+}
+
+module "azure_sql" {
+  source = "./modules/azure_sql"
+
+  sql_server_name   = "aifoundrysql-${random_string.suffix.result}"
+  sql_database_name = "aifoundrydb"
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
+  sql_admin_login     = "sqladmin"
+  sql_admin_password  = var.sql_admin_password
+  subnet_id           = module.network.vm_subnet_id
+  vnet_id             = module.network.vnet_id
+}
+
+module "cosmos_db" {
+  source = "./modules/cosmos_db"
+
+  cosmosdb_account_name = "aifoundrycosmosdb-${random_string.suffix.result}"
+  resource_group_name   = module.resource_group.name
+  location              = module.resource_group.location
+  subnet_id             = module.network.vm_subnet_id
+  vnet_id               = module.network.vnet_id
+}
+
+module "app_storage_account" {
+  source = "./modules/app_storage_account"
+
+  app_storage_account_name = "aifoundryappsa${random_string.suffix.result}"
+  resource_group_name      = module.resource_group.name
+  location                 = module.resource_group.location
+  subnet_id                = module.network.vm_subnet_id
+  vnet_id                  = module.network.vnet_id
+}
+
+module "app_service_environment" {
+  source = "./modules/app_service_environment"
+
+  ase_name            = "aifoundryase-${random_string.suffix.result}"
+  resource_group_name = module.resource_group.name
+  subnet_id           = module.network.vm_subnet_id
+}
+
+module "api_management" {
+  source = "./modules/api_management"
+
+  apim_name           = "aifoundryapim-${random_string.suffix.result}"
+  location            = module.resource_group.location
+  resource_group_name = module.resource_group.name
+  publisher_name      = var.publisher_name
+  publisher_email     = var.publisher_email
+  subnet_id           = module.network.vm_subnet_id
+}
+
+module "application_gateway" {
+  source = "./modules/application_gateway"
+
+  ag_name             = "aifoundryag-${random_string.suffix.result}"
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
+  subnet_id           = module.network.vm_subnet_id
+}
+
+module "jumpbox_vm" {
+  source = "./modules/jumpbox_vm"
+
+  vm_name             = "aifoundryjumpbox-${random_string.suffix.result}"
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
+  subnet_id           = module.network.vm_subnet_id
+  admin_username      = "azureuser"
+  admin_password      = var.vm_admin_password
+}
+
+module "bastion_host" {
+  source = "./modules/bastion_host"
+
+  bastion_host_name   = "aifoundrybastion-${random_string.suffix.result}"
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
+  subnet_id           = module.network.bastion_subnet_id
+}
+
+
+
+
+
+
+
+
+

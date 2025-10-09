@@ -343,9 +343,6 @@ This Terraform project incorporates several security best practices:
 
 We welcome contributions! If you have suggestions for improvements or new features, please open an issue or submit a pull request.
 
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Future Enhancements and Considerations
 

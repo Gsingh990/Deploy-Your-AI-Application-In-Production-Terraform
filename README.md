@@ -408,10 +408,6 @@ This Terraform project incorporates several security best practices:
 
 We welcome contributions! If you have suggestions for improvements or new features, please open an issue or submit a pull request.
 
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
 ## Future Enhancements and Considerations
 
 -   **Managed Identities for App Service Environment:** Implement user-assigned managed identities for applications deployed within the App Service Environment for secure service-to-service authentication.

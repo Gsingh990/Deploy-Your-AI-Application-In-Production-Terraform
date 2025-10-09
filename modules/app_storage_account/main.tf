@@ -1,4 +1,3 @@
-
 resource "azurerm_storage_account" "app_sa" {
   name                     = var.app_storage_account_name
   resource_group_name      = var.resource_group_name
@@ -27,7 +26,7 @@ resource "azurerm_private_endpoint" "app_sa_pe" {
 
   private_dns_zone_group {
     name                 = "default"
-    private_dns_zone_ids = [azurerm_private_dns_zone.app_sa_pdnsz.id]
+    private_dns_zone_ids = var.private_dns_zone_ids
   }
 
   private_service_connection {
@@ -36,16 +35,4 @@ resource "azurerm_private_endpoint" "app_sa_pe" {
     is_manual_connection           = false
     subresource_names              = ["blob", "queue", "table", "file"]
   }
-}
-
-resource "azurerm_private_dns_zone" "app_sa_pdnsz" {
-  name                = "privatelink.blob.core.windows.net"
-  resource_group_name = var.resource_group_name
-}
-
-resource "azurerm_private_dns_zone_virtual_network_link" "app_sa_pdnsz_link" {
-  name                  = "${var.app_storage_account_name}-pdnsz-link"
-  resource_group_name   = var.resource_group_name
-  private_dns_zone_name = azurerm_private_dns_zone.app_sa_pdnsz.name
-  virtual_network_id    = var.vnet_id
 }

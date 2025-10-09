@@ -20,7 +20,14 @@ module "network" {
   agent_client_subnet_name = "AgentClientSubnet"
   agent_client_subnet_address_prefixes = ["10.0.3.0/24"]
   enable_ddos_protection  = true
+  vm_subnet_delegations   = ["Microsoft.Web/hostingEnvironments"]
 }
+
+resource "azurerm_resource_provider_registration" "microsoft_app" {
+  name = "Microsoft.App"
+}
+
+
 
 data "azurerm_client_config" "current" {}
 
@@ -121,7 +128,9 @@ module "app_storage_account" {
   location                 = module.resource_group.location
   subnet_id                = module.network.vm_subnet_id
   vnet_id                  = module.network.vnet_id
+  private_dns_zone_ids     = [module.storage_account.private_dns_zone_id]
 }
+
 
 module "app_service_environment" {
   source = "./modules/app_service_environment"

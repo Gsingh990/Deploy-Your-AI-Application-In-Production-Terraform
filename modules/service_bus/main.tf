@@ -3,7 +3,7 @@ resource "azurerm_servicebus_namespace" "sb_namespace" {
   name                = var.sb_namespace_name
   location            = var.location
   resource_group_name = var.resource_group_name
-  sku                 = "Standard"
+  sku                 = "Premium"
 
   tags = {
     environment = "production"

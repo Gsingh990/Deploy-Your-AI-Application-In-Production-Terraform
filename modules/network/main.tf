@@ -1,3 +1,4 @@
+
 resource "azurerm_virtual_network" "vnet" {
   name                = var.vnet_name
   address_space       = var.address_space
@@ -14,6 +15,22 @@ resource "azurerm_subnet" "vm_subnet" {
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = var.vm_subnet_address_prefixes
+
+  dynamic "delegation" {
+    for_each = var.vm_subnet_delegations
+    content {
+      name = delegation.value
+      service_delegation {
+        name = "Microsoft.Web/hostingEnvironments"
+        actions = [
+          "Microsoft.Network/virtualNetworks/subnets/join/action",
+          "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action",
+        ]
+      }
+    }
+  }
+
+  service_endpoints = ["Microsoft.Storage"]
 }
 
 resource "azurerm_subnet" "bastion_subnet" {

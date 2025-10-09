@@ -1,4 +1,3 @@
-
 variable "app_storage_account_name" {
   description = "The name of the application storage account."
   type        = string
@@ -22,4 +21,9 @@ variable "subnet_id" {
 variable "vnet_id" {
   description = "The ID of the virtual network to link the private DNS zone."
   type        = string
+}
+
+variable "private_dns_zone_ids" {
+  description = "A list of Private DNS Zone IDs to associate with the private endpoint."
+  type        = list(string)
 }

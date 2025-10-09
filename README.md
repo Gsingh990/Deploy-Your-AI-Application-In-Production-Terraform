@@ -298,6 +298,71 @@ Before you begin, ensure you have the following installed:
     terraform apply
     ```
 
+## Post-Deployment Testing
+
+After successfully running `terraform apply`, it is crucial to perform a series of tests to validate the infrastructure. These tests cover various aspects to ensure everything is provisioned correctly and securely.
+
+### 1. Basic Resource Verification (Azure Portal/CLI):
+
+-   **Resource Group:** Verify that the main resource group exists and contains all expected resources.
+-   **Virtual Network & Subnets:**
+    -   Confirm the VNet exists with the correct address space.
+    -   Verify that `VmSubnet`, `AzureBastionSubnet`, and `AgentClientSubnet` exist with their respective address prefixes.
+    -   Check that private endpoint network policies are enabled on relevant subnets if configured.
+-   **Azure Services:** For each deployed service (Key Vault, Container Registry, OpenAI, AI Search, SQL Server, Cosmos DB, Storage Accounts, Log Analytics Workspace, Application Insights, Container Apps Environment, Service Bus Namespace, Managed Identity, Application Gateway, Jumpbox VM, Bastion Host):
+    -   Verify its existence in the Azure Portal.
+    -   Check its basic configuration (e.g., SKU, location, name).
+
+### 2. Network Connectivity & Isolation Tests:
+
+-   **Private Endpoints:**
+    -   For each service with a private endpoint (Key Vault, ACR, OpenAI, AI Search, SQL, Cosmos DB, Storage Accounts, Service Bus), attempt to access it from *within* the `VmSubnet` (e.g., from the Jumpbox VM) using its private IP or private DNS name. This should succeed.
+    -   Attempt to access these services from *outside* the VNet (e.g., from your local machine without VPN/Bastion) using their public endpoints. This should **fail** if `public_network_access_enabled` is set to `false` (as it is for OpenAI).
+    -   Verify that the corresponding Private DNS Zones are correctly linked to the VNet and contain the necessary A records for the private endpoints.
+-   **Jumpbox VM Access:**
+    -   Use Azure Bastion to securely connect to the Jumpbox VM (RDP/SSH). Verify that you can access resources within the VNet from the Jumpbox.
+    -   Attempt to directly RDP/SSH to the Jumpbox VM's private IP from outside the VNet (should fail).
+-   **Application Gateway:**
+    -   Access the public IP or DNS name of the Application Gateway from your local machine. Verify that it responds (e.g., a default backend page or an error if no application is deployed yet).
+    -   If configured, test WAF rules by attempting to trigger a common web attack (e.g., SQL injection payload in a URL parameter) and verify it's blocked.
+
+### 3. Security Configuration Tests:
+
+-   **Key Vault:**
+    -   Verify that the Key Vault has RBAC enabled.
+    -   Attempt to access secrets from the Jumpbox VM using a Managed Identity (if configured for the VM) or a service principal.
+-   **Managed Identities:**
+    -   Verify that the User Assigned Managed Identity exists.
+    -   If you deploy an application (e.g., a Container App) and assign this Managed Identity to it, verify that the application can access other Azure services (e.g., Key Vault secrets, Storage Account) using this identity.
+-   **DDoS Protection:** Confirm that the DDoS Protection Plan is associated with the VNet.
+-   **Role-Based Access Control (RBAC):** Review the access policies on critical resources (e.g., Key Vault, databases) to ensure only authorized identities have the necessary permissions.
+
+### 4. Monitoring & Logging Tests:
+
+-   **Log Analytics Workspace & Application Insights:**
+    -   Generate some activity on the deployed services (e.g., access Key Vault, make a request through APIM).
+    -   Navigate to the Log Analytics Workspace and Application Insights in the Azure Portal.
+    -   Verify that logs and metrics are being collected from the deployed resources.
+    -   Run some basic Kusto queries to check for data presence.
+
+### 5. Service-Specific Tests:
+
+-   **Container Registry:** Log in to ACR from a Docker client (e.g., from the Jumpbox VM) and verify you can push/pull images.
+-   **Azure SQL:** Connect to the SQL Server from the Jumpbox VM (using the private endpoint) and verify you can access the database.
+-   **Cosmos DB:** Connect to the Cosmos DB account from the Jumpbox VM (using the private endpoint) and verify you can interact with it.
+-   **Azure OpenAI:** From a client within the VNet (e.g., Jumpbox VM), attempt to make a call to the OpenAI endpoint.
+-   **Azure AI Search:** From a client within the VNet, attempt to query the AI Search service.
+-   **Azure Service Bus:** Send a message to the queue from one client and receive it from another (e.g., using simple console apps on the Jumpbox VM).
+
+### Tools for Testing:
+
+-   **Azure Portal:** For visual verification of resources and basic configurations.
+-   **Azure CLI / Azure PowerShell:** For programmatic verification and executing commands (e.g., `az network vnet show`, `az keyvault secret show`).
+-   **Jumpbox VM / Azure Bastion:** Your primary secure access point for internal network testing.
+-   **`nslookup` / `dig`:** To verify private DNS resolution from within the VNet.
+-   **`curl` / `wget`:** To test HTTP/HTTPS connectivity to endpoints.
+-   **Terraform State:** While not a testing tool, `terraform state show` or `terraform output` can help retrieve resource IDs and names for testing.
+
 ## Network Topology and Security
 
 The network architecture is designed for maximum security and isolation:
@@ -343,6 +408,9 @@ This Terraform project incorporates several security best practices:
 
 We welcome contributions! If you have suggestions for improvements or new features, please open an issue or submit a pull request.
 
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Future Enhancements and Considerations
 

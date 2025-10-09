@@ -7,7 +7,7 @@ variable "resource_group_name" {
 variable "location" {
   description = "The Azure region where the resources will be created."
   type        = string
-  default     = "East US"
+  default     = "West US 2"
 }
 
 variable "sql_admin_password" {

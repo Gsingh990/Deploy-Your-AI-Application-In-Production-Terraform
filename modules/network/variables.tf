@@ -1,3 +1,4 @@
+
 variable "vnet_name" {
   description = "The name of the virtual network."
   type        = string
@@ -64,4 +65,10 @@ variable "ddos_protection_plan_name" {
   description = "The name of the DDoS Protection Plan."
   type        = string
   default     = "ai-foundry-ddos-plan"
+}
+
+variable "vm_subnet_delegations" {
+  description = "A list of service delegations for the VM subnet."
+  type        = list(string)
+  default     = []
 }

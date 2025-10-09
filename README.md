@@ -50,6 +50,8 @@ The provided architecture diagram illustrates a comprehensive and secure environ
 
 ## Conceptual Agentic AI Solution: Azure Data & Solution Analyst Agent
 
+**Important Note:** This Terraform project provisions the *Azure infrastructure* required to host an Agentic AI Solution. It does **not** deploy the application code for the agents themselves. The following section describes the conceptual application that *would run on* this provisioned infrastructure.
+
 This infrastructure is designed to host a sophisticated Agentic AI Solution, conceptualized as an "Azure Data & Solution Analyst Agent." This intelligent system is capable of ingesting, analyzing, and providing actionable solutions based on diverse data inputs.
 
 ### Primary Goal:
@@ -264,7 +266,7 @@ Before you begin, ensure you have the following installed:
     ```
 
 4.  **Provide Sensitive Variables:**
-    For sensitive variables like `sql_admin_password` and `vm_admin_password`, it is recommended to provide them via environment variables or a `.tfvars` file, rather than directly on the command line.
+    For sensitive variables like `sql_admin_password` and `vm_admin_password`, you **must** provide values. It is highly recommended to provide them via environment variables or a `.tfvars` file, rather than directly on the command line.
 
     **Using Environment Variables (recommended for CI/CD):**
     ```bash
@@ -279,6 +281,12 @@ Before you begin, ensure you have the following installed:
     vm_admin_password  = "YourStrongVMPassword!"
     ```
     *Note: Ensure this file is not committed to version control if it contains sensitive information.*
+
+    **Generating Strong Passwords:**
+    You can use tools like `openssl` or online password generators to create strong, random passwords:
+    ```bash
+    openssl rand -base64 12
+    ```
 
 5.  **Review the plan:**
     ```bash
